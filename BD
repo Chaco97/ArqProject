@@ -1,0 +1,150 @@
+CREATE TABLE roles (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    nombre VARCHAR(255) NOT NULL UNIQUE
+);
+
+-- =====================================
+-- TABLA COOPERATIVAS
+-- =====================================
+CREATE TABLE cooperativas (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    nombre VARCHAR(255) NOT NULL,
+    ruc VARCHAR(255),
+    correo_contacto VARCHAR(255),
+    telefono_contacto VARCHAR(255)
+);
+
+-- =====================================
+-- TABLA RUTAS
+-- =====================================
+CREATE TABLE rutas (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    origen VARCHAR(255),
+    destino VARCHAR(255),
+    terminal_origen VARCHAR(255),
+    terminal_destino VARCHAR(255),
+    duracion_estimada VARCHAR(255),
+    precio_base NUMERIC(38,2)
+);
+
+-- =====================================
+-- TABLA BUSES
+-- =====================================
+CREATE TABLE buses (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    placa VARCHAR(255) UNIQUE,
+    tipo VARCHAR(255),
+    capacidad_asientos INTEGER,
+    activo BOOLEAN,
+    cooperativa_id UUID,
+
+    CONSTRAINT fk_bus_cooperativa
+        FOREIGN KEY (cooperativa_id)
+        REFERENCES cooperativas(id)
+);
+
+-- =====================================
+-- TABLA USUARIOS
+-- =====================================
+CREATE TABLE usuarios (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    nombre VARCHAR(255) NOT NULL,
+    apellido VARCHAR(255),
+    cedula VARCHAR(255),
+    correo VARCHAR(255) UNIQUE,
+    telefono VARCHAR(255) UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    saldo NUMERIC(38,2) NOT NULL DEFAULT 0,
+    creado_en TIMESTAMP,
+    rol_id UUID NOT NULL,
+
+    CONSTRAINT fk_usuario_rol
+        FOREIGN KEY (rol_id)
+        REFERENCES roles(id)
+);
+
+-- =====================================
+-- TABLA VIAJES
+-- =====================================
+CREATE TABLE viajes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    estado VARCHAR(255),
+    fecha_viaje DATE,
+    hora_salida TIMESTAMP,
+    hora_llegada_estimada TIMESTAMP,
+    precio_actual NUMERIC(38,2),
+    bus_id UUID,
+    ruta_id UUID,
+
+    CONSTRAINT fk_viaje_bus
+        FOREIGN KEY (bus_id)
+        REFERENCES buses(id),
+
+    CONSTRAINT fk_viaje_ruta
+        FOREIGN KEY (ruta_id)
+        REFERENCES rutas(id)
+);
+
+-- =====================================
+-- TABLA BOLETOS
+-- =====================================
+CREATE TABLE boletos (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    codigo_qr VARCHAR(255),
+    creado_en TIMESTAMP,
+    estado VARCHAR(255),
+    expiracion_reserva TIMESTAMP,
+    numero_asiento INTEGER,
+    usuario_id UUID,
+    viaje_id UUID,
+
+    CONSTRAINT fk_boleto_usuario
+        FOREIGN KEY (usuario_id)
+        REFERENCES usuarios(id),
+
+    CONSTRAINT fk_boleto_viaje
+        FOREIGN KEY (viaje_id)
+        REFERENCES viajes(id)
+);
+
+-- =====================================
+-- TABLA PAGOS
+-- =====================================
+CREATE TABLE pagos (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    estado VARCHAR(255),
+    fecha_pago TIMESTAMP,
+    metodo VARCHAR(255),
+    monto NUMERIC(38,2),
+    boleto_id UUID,
+
+    CONSTRAINT fk_pago_boleto
+        FOREIGN KEY (boleto_id)
+        REFERENCES boletos(id)
+);
+
+-- =====================================
+-- TABLA RECARGAS VENTANILLA
+-- =====================================
+CREATE TABLE recargas_ventanilla (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    estado VARCHAR(255) NOT NULL,
+    fecha_creacion TIMESTAMP,
+    fecha_expiracion TIMESTAMP,
+    monto NUMERIC(38,2) NOT NULL,
+    referencia VARCHAR(255) NOT NULL UNIQUE,
+    usuario_id UUID,
+
+    CONSTRAINT fk_recarga_usuario
+        FOREIGN KEY (usuario_id)
+        REFERENCES usuarios(id)
+);
+
+-- =====================================
+-- DATOS INICIALES
+-- =====================================
+
+INSERT INTO roles (nombre)
+VALUES
+('ADMIN'),
+('USER');
